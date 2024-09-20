@@ -19,6 +19,8 @@ SECRET_ACCESS_KEY = os.environ.get('R2_SECRET_ACCESS_KEY')
 BUCKET_NAME = os.environ.get('R2_BUCKET_NAME')
 CDN_BASE_URL = os.environ.get('CDN_BASE_URL')
 
+COMPRESSED_IMAGE_BUFFER = io.BytesIO()
+
 ROTATE_DEGREES = {
     '0° :arrow_heading_up:': '0',
     '90° :arrow_right_hook:': '90',
@@ -182,9 +184,9 @@ def main():
                             )
                             file_name, _ = os.path.splitext(image_file.name)
                             compressed_image_name = f'{file_name}_{sum_md5}_cc.webp'
-                            compressed_image_buffer = io.BytesIO()
+                            # COMPRESSED_IMAGE_BUFFER = io.BytesIO()
                             cropped_image.save(
-                                compressed_image_buffer,
+                                COMPRESSED_IMAGE_BUFFER,
                                 format='webp',
                                 quality=col2_img_quality_slider,
                                 optimize=True
@@ -192,13 +194,13 @@ def main():
                         with col3:
                             col3_container = st.container(border=True)
                             col3_container.image(
-                                compressed_image_buffer,
-                                caption=f'Modified Image ({get_size_format(compressed_image_buffer.getbuffer().nbytes)})',
+                                COMPRESSED_IMAGE_BUFFER,
+                                caption=f'Modified Image ({get_size_format(COMPRESSED_IMAGE_BUFFER.getbuffer().nbytes)})',
                                 use_column_width=True)
                         with col4:
                             col4.download_button(
                                 label='Download',
-                                data=compressed_image_buffer,
+                                data=COMPRESSED_IMAGE_BUFFER,
                                 file_name=compressed_image_name,
                                 mime='image/webp')
                             button_upload_file = col4.button(
@@ -217,7 +219,7 @@ def main():
                                     response = s3_client.put_object(
                                         Bucket=BUCKET_NAME,
                                         Key=f'images/{compressed_image_name}',
-                                        Body=compressed_image_buffer.getvalue()
+                                        Body=COMPRESSED_IMAGE_BUFFER.getvalue()
                                     )
                                     if response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
                                         st.success(f'Successfuly uploaded image to CDN.')
