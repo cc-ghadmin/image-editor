@@ -1,3 +1,4 @@
+import boto3
 import hashlib
 import io
 import logging
@@ -5,14 +6,25 @@ import os
 import pyotp
 import streamlit as st
 
-from PIL import Image, ImageOps, ImageFile
-from streamlit.runtime.uploaded_file_manager import UploadedFile
-from io import BytesIO
+from botocore.client import Config
+from PIL import Image, ImageOps
 
 
 logger = logging.getLogger(st.__name__)
 
 TOTP_KEY = os.environ.get('TOTP_SECRET_KEY')
+ACCOUNT_ID = os.environ.get('R2_ACCOUNT_ID')
+ACCESS_KEY_ID = os.environ.get('R2_ACCESS_KEY_ID')
+SECRET_ACCESS_KEY = os.environ.get('R2_SECRET_ACCESS_KEY')
+BUCKET_NAME = os.environ.get('R2_BUCKET_NAME')
+CDN_BASE_URL = os.environ.get('CDN_BASE_URL')
+
+s3_client = boto3.client('s3',
+    endpoint_url=f'https://{ACCOUNT_ID}.r2.cloudflarestorage.com',
+    aws_access_key_id=ACCESS_KEY_ID,
+    aws_secret_access_key=SECRET_ACCESS_KEY,
+    config=Config(signature_version='s3v4')
+)
 
 ROTATE_DEGREES = {
     '0° :arrow_heading_up:': '0',
@@ -200,13 +212,27 @@ def main():
                                 use_column_width=True)
                         with col4:
                             col4.download_button(
-                                label='Download Compressed Image',
+                                label='Download',
                                 data=compressed_image_buffer,
                                 file_name=compressed_image_name,
                                 mime='image/webp')
                             button_upload_file = col4.button(label='Upload to CDN', key=f'upload_{sum_md5}')
                             if button_upload_file:
-                                st.toast(f'Uploading file to CDN "{image_file.name}"')
+                                st.toast(f'Uploading file to CDN "{compressed_image_name}"')
+                                try:
+                                    response = s3_client.put_object(
+                                        Bucket=BUCKET_NAME,
+                                        Key=f'images/{compressed_image_name}',
+                                        Body=compressed_image_buffer.getvalue()
+                                    )
+                                    if response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
+                                        st.success(f'Successfuly uploaded image to CDN.')
+                                        uploaded_image_url = f'''{CDN_BASE_URL}/images/{compressed_image_name}'''
+                                        st.code(uploaded_image_url, language='python')
+                                except Exception as e:
+                                    msg = f'Error occurred while uploading image to CDN. Error {e}'
+                                    logger.debug(msg)
+                                    st.error(msg)
 
 if __name__ == '__main__':
     main()
