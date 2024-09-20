@@ -217,10 +217,12 @@ def main():
                                 st.toast(f'Uploading file to CDN "{compressed_image_name}"')
                                 try:
                                     COMPRESSED_IMAGE_BUFFER.seek(0)
+                                    upload_file_bytes = COMPRESSED_IMAGE_BUFFER.getvalue()
+                                    st.write(upload_file_bytes)
                                     response = s3_client.put_object(
                                         Bucket=BUCKET_NAME,
                                         Key=f'images/{compressed_image_name}',
-                                        Body=COMPRESSED_IMAGE_BUFFER.getvalue()
+                                        Body=upload_file_bytes
                                     )
                                     if response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
                                         st.success(f'Successfuly uploaded image to CDN.')
