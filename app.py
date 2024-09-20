@@ -216,6 +216,7 @@ def main():
                                 )
                                 st.toast(f'Uploading file to CDN "{compressed_image_name}"')
                                 try:
+                                    COMPRESSED_IMAGE_BUFFER.seek(0)
                                     response = s3_client.put_object(
                                         Bucket=BUCKET_NAME,
                                         Key=f'images/{compressed_image_name}',
