@@ -19,13 +19,6 @@ SECRET_ACCESS_KEY = os.environ.get('R2_SECRET_ACCESS_KEY')
 BUCKET_NAME = os.environ.get('R2_BUCKET_NAME')
 CDN_BASE_URL = os.environ.get('CDN_BASE_URL')
 
-s3_client = boto3.client('s3',
-    endpoint_url=f'https://{ACCOUNT_ID}.r2.cloudflarestorage.com',
-    aws_access_key_id=ACCESS_KEY_ID,
-    aws_secret_access_key=SECRET_ACCESS_KEY,
-    config=Config(signature_version='s3v4')
-)
-
 ROTATE_DEGREES = {
     '0° :arrow_heading_up:': '0',
     '90° :arrow_right_hook:': '90',
@@ -36,14 +29,6 @@ ROTATE_DEGREES = {
 def set_page_config():
     page_config = {
         'page_title': 'Image Processor',
-        'layout': 'wide'
-    }
-    st.set_page_config(**page_config)
-
-# Set page config
-def set_page_config():
-    page_config = {
-        'page_title': 'File Scanner',
         'layout': 'wide'
     }
     st.set_page_config(**page_config)
@@ -196,7 +181,7 @@ def main():
                                 args=[sum_md5],
                             )
                             file_name, _ = os.path.splitext(image_file.name)
-                            compressed_image_name = f'{file_name}_compressed.webp'
+                            compressed_image_name = f'{file_name}_{sum_md5}_cc.webp'
                             compressed_image_buffer = io.BytesIO()
                             cropped_image.save(
                                 compressed_image_buffer,
@@ -216,8 +201,17 @@ def main():
                                 data=compressed_image_buffer,
                                 file_name=compressed_image_name,
                                 mime='image/webp')
-                            button_upload_file = col4.button(label='Upload to CDN', key=f'upload_{sum_md5}')
+                            button_upload_file = col4.button(
+                                label='Upload to CDN',
+                                key=f'upload_{sum_md5}'
+                            )
                             if button_upload_file:
+                                s3_client = boto3.client('s3',
+                                    endpoint_url=f'https://{ACCOUNT_ID}.r2.cloudflarestorage.com',
+                                    aws_access_key_id=ACCESS_KEY_ID,
+                                    aws_secret_access_key=SECRET_ACCESS_KEY,
+                                    config=Config(signature_version='s3v4')
+                                )
                                 st.toast(f'Uploading file to CDN "{compressed_image_name}"')
                                 try:
                                     response = s3_client.put_object(
