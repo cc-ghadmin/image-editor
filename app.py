@@ -183,7 +183,7 @@ def main():
                                 args=[sum_md5],
                             )
                             file_name, _ = os.path.splitext(image_file.name)
-                            compressed_image_name = f'{file_name}_{sum_md5}_cc.webp'
+                            compressed_image_name = f'{sum_md5}_cc.webp'
                             # COMPRESSED_IMAGE_BUFFER = io.BytesIO()
                             cropped_image.save(
                                 COMPRESSED_IMAGE_BUFFER,
