@@ -122,7 +122,7 @@ def main():
                             col1_original_image_container = st.container(border=True)
                             col1_original_image_container.image(
                                 image,
-                                caption=f'Original Image ({get_size_format(image_file.size)})', use_column_width=True)
+                                caption=f'Original Image ({get_size_format(image_file.size)})', use_container_width=True)
                         with col2:
                             # Image Size Reduction
                             col2_reduce_size_container = st.container(border=True)
@@ -196,7 +196,7 @@ def main():
                             col3_container.image(
                                 COMPRESSED_IMAGE_BUFFER,
                                 caption=f'Modified Image ({get_size_format(COMPRESSED_IMAGE_BUFFER.getbuffer().nbytes)})',
-                                use_column_width=True)
+                                use_container_width=True)
                         with col4:
                             col4.download_button(
                                 label='Download',
@@ -212,7 +212,11 @@ def main():
                                     endpoint_url=f'https://{ACCOUNT_ID}.r2.cloudflarestorage.com',
                                     aws_access_key_id=ACCESS_KEY_ID,
                                     aws_secret_access_key=SECRET_ACCESS_KEY,
-                                    config=Config(signature_version='s3v4')
+                                    config=Config(
+                                        signature_version='s3v4',
+                                        request_checksum_calculation = 'WHEN_REQUIRED',
+                                        response_checksum_validation = 'WHEN_REQUIRED'
+                                    )
                                 )
                                 st.toast(f'Uploading file to CDN "{compressed_image_name}"')
                                 try:
@@ -226,7 +230,7 @@ def main():
                                         uploaded_image_url = f'''{CDN_BASE_URL}/images/{compressed_image_name}'''
                                         st.code(uploaded_image_url, language='python')
                                 except Exception as e:
-                                    msg = f'Error occurred while uploading image to CDN. Error {e}'
+                                    msg = f'Error occurred while uploading image to CDN. Error :: {e}'
                                     logger.debug(msg)
                                     st.error(msg)
 
