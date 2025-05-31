@@ -45,6 +45,9 @@ def verify_code(code: str) -> bool:
     totp = pyotp.TOTP(TOTP_KEY)
     return totp.verify(code, valid_window=3)
 
+def login_screen():
+    return
+
 # Callback for logout button
 def on_logout_click():
     st.session_state.authenticated_user = None
@@ -68,23 +71,30 @@ def main():
             ''')
 
     login_form_placeholder = st.empty()
-    if st.session_state.setdefault('authenticated_user', None) is None:
-        login_container = login_form_placeholder.container(border=True)
-        username = login_container.text_input('Username', type='default')
-        code = login_container.text_input('OTP', type='default')
+    if not st.user.is_logged_in:
+        login_container = login_form_placeholder.container(border=False)
         login_button = login_container.button(
-            label='Login',
-            on_click=on_login_click,
-            kwargs={'code': code, 'username': username},
+            label='Login with Google',
+            on_click=st.login
         )
-        if login_button:
-            if not verify_code(code=code):
-                st.error('Invalid OTP. Access denied.')
-                st.stop()
+    # if st.session_state.setdefault('authenticated_user', None) is None:
+    #     login_container = login_form_placeholder.container(border=True)
+    #     username = login_container.text_input('Username', type='default')
+    #     code = login_container.text_input('OTP', type='default')
+    #     login_button = login_container.button(
+    #         label='Login',
+    #         on_click=on_login_click,
+    #         kwargs={'code': code, 'username': username},
+    #     )
+    #     if login_button:
+    #         if not verify_code(code=code):
+    #             st.error('Invalid OTP. Access denied.')
+    #             st.stop()
     else:
         login_form_placeholder.empty()
-        st.success(f'Welcome, {st.session_state.authenticated_user}!')
-        logout_button = st.button(label='Logout', on_click=on_logout_click)
+        # st.success(f'Welcome, {st.session_state.authenticated_user}!')
+        st.success(f'Welcome, {st.user.name}!')
+        logout_button = st.button(label='Logout', on_click=st.logout)
 
         file_config = {
             'label': 'Upload your files :page_facing_up:',
